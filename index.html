@@ -6,6 +6,7 @@
 <title>PRODE DE OFICINA ⚽</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700;800&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -171,6 +172,19 @@ html,body{min-height:100%;background:var(--verde);font-family:'Barlow Condensed'
 .hidden{display:none!important}
 
 /* RESPONSIVE */
+/* COMPROBANTE WHATSAPP */
+.comp-box{background:var(--crema);border:3px solid #25d366;border-radius:3px;padding:16px;margin-top:14px;box-shadow:4px 4px 0 rgba(0,0,0,.3)}
+.comp-box .ctit{font-family:'Bebas Neue',sans-serif;font-size:1.15rem;letter-spacing:2px;color:#128c1e;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.comp-row{display:flex;gap:8px;align-items:stretch}
+.comp-row input[type=tel]{flex:1;padding:9px 11px;font-family:'Courier Prime',monospace;font-size:1rem;border:2px solid #25d366;background:var(--blanco);border-radius:2px}
+.comp-row input[type=tel]:focus{outline:none;box-shadow:0 0 0 2px rgba(37,211,102,.25)}
+.btn-wa{background:#25d366;color:#fff;border:2px solid #128c1e;box-shadow:3px 3px 0 var(--negro);font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:1px;padding:9px 16px;border-radius:2px;cursor:pointer;white-space:nowrap;transition:all .15s}
+.btn-wa:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--negro)}
+.btn-wa:active{transform:translate(1px,1px);box-shadow:2px 2px 0 var(--negro)}
+.btn-wa:disabled{opacity:.6;cursor:not-allowed;transform:none;box-shadow:none}
+.comp-hint{font-size:.75rem;color:#777;margin-top:5px;letter-spacing:.3px}
+.comp-status{font-size:.85rem;margin-top:8px;font-weight:700;display:none;letter-spacing:.5px}
+
 @media(max-width:580px){
   .view{padding:10px}
   .tdeq{padding:5px 5px;font-size:.78rem}
@@ -263,6 +277,15 @@ html,body{min-height:100%;background:var(--verde);font-family:'Barlow Condensed'
       <div class="best" id="best">Marcá tus 13 pronósticos</div>
       <button class="btn btn-verde btn-sm" id="btn-guardar">💾 GUARDAR BOLETA</button>
     </div>
+  <!-- COMPROBANTE WHATSAPP -->
+  <div class="comp-box" id="comp-box">
+    <div class="ctit">📱 ENVIAR COMPROBANTE AL WHATSAPP</div>
+    <div class="comp-row">
+      <input type="tel" id="inp-tel" placeholder="Ej: 1123456789" inputmode="numeric" maxlength="20">
+      <button class="btn-wa" id="btn-wa">📲 ENVIAR</button>
+    </div>
+    <div class="comp-hint">🇦🇷 Ingresá el número argentino sin 0 ni 15 — ej: <strong>1123456789</strong> o <strong>3512345678</strong></div>
+    <div class="comp-status" id="comp-status"></div>
   </div>
 </div>
 
@@ -598,6 +621,50 @@ function celebrar(){
   })();
 }
 
+/* ---- COMPROBANTE WHATSAPP ---- */
+function formatWANum(n){
+  n=n.replace(/[^\d+]/g,'');
+  if(n.startsWith('0'))n=n.slice(1);
+  if(!n.startsWith('+')&&!n.startsWith('54'))n='54'+n;
+  if(!n.startsWith('+'))n='+'+n;
+  return n;
+}
+
+async function enviarWA(){
+  const telRaw=document.getElementById('inp-tel').value.trim();
+  if(!telRaw){alert('Ingresá un número de teléfono.');return}
+  const numero=formatWANum(telRaw);
+  const statusEl=document.getElementById('comp-status');
+  const btn=document.getElementById('btn-wa');
+  statusEl.style.display='none';
+  btn.textContent='⏳ Generando...';btn.disabled=true;
+  try{
+    const boletaEl=document.getElementById('boleta');
+    const canvas=await html2canvas(boletaEl,{scale:2,backgroundColor:'#f5f0e8',useCORS:true,logging:false});
+    const blob=await new Promise(r=>canvas.toBlob(r,'image/png'));
+    const file=new File([blob],'comprobante-prode.png',{type:'image/png'});
+    const jug=S.jugadores.find(j=>j.id===activo);
+    const msg=encodeURIComponent(`¡Hola${jug?' '+jug.nombre:''}! 🏆 Te mando tu comprobante del Prode de Oficina "${S.torneo}". ¡Buena suerte!`);
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      await navigator.share({files:[file],title:'Comprobante Prode de Oficina',text:`Tu pronóstico del ${S.torneo} está guardado 🏆`});
+    } else {
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;a.download='comprobante-prode.png';a.click();
+      URL.revokeObjectURL(url);
+      setTimeout(()=>window.open(`https://wa.me/${numero.replace('+','')}?text=${msg}`,'_blank'),400);
+    }
+    statusEl.style.display='block';statusEl.style.color='#128c1e';
+    statusEl.textContent='✓ ¡Comprobante enviado!';
+  }catch(err){
+    if(err.name!=='AbortError'){
+      statusEl.style.display='block';statusEl.style.color='#c0000a';
+      statusEl.textContent='⚠️ No se pudo enviar. Intentá de nuevo.';
+    }
+  }
+  btn.textContent='📲 ENVIAR';btn.disabled=false;
+}
+
 /* ---- NUEVA EDICIÓN ---- */
 function showModal(){document.getElementById('overlay').classList.add('vis')}
 function hideModal(){document.getElementById('overlay').classList.remove('vis')}
@@ -616,6 +683,7 @@ document.getElementById('inp-monto').addEventListener('input',updPozo);
 document.getElementById('btn-iniciar').addEventListener('click',iniciar);
 document.getElementById('btn-guardar').addEventListener('click',guardarBoleta);
 document.getElementById('btn-calc').addEventListener('click',calcular);
+document.getElementById('btn-wa').addEventListener('click',enviarWA);
 document.getElementById('btn-nueva').addEventListener('click',showModal);
 document.getElementById('btn-nueva-rk').addEventListener('click',showModal);
 document.getElementById('btn-ok-nueva').addEventListener('click',nuevaEd);
