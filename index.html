@@ -505,13 +505,20 @@ function guardarBoleta(){
     const cnt=Object.keys(S.prono[activo]||{}).length;
     alert(`Faltan ${PARTIDOS.length-cnt} partidos por marcar.`);return;
   }
+  save();
   const sig=S.jugadores.find(j=>j.id!==activo&&!esCompleto(j.id));
-  if(sig)activo=sig.id;
-  renderBoleta();
-  const btn=document.getElementById('btn-guardar');
-  const orig=btn.textContent;
-  btn.textContent='✓ GUARDADO!';btn.style.background='#1a6e38';
-  setTimeout(()=>{btn.textContent=orig;btn.style.background='';},1600);
+  if(sig){
+    activo=sig.id;
+    renderBoleta();
+    const btn=document.getElementById('btn-guardar');
+    const orig=btn.textContent;
+    btn.textContent='✓ GUARDADO!';btn.style.background='#1a6e38';
+    setTimeout(()=>{btn.textContent=orig;btn.style.background='';},1600);
+  } else {
+    // Todos los jugadores completaron su boleta
+    alert('✅ ¡Todas las boletas están cargadas! Ahora ingresá los resultados reales.');
+    showView('view-res');
+  }
 }
 
 /* ---- RESULTADOS ---- */
