@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRODE DE OFICINA ⚽</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700;800&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --verde:#1a472a;--verde-med:#245c33;--verde-claro:#2d6a3f;
+  --dorado:#f4c430;--dorado-osc:#c9a227;
+  --crema:#f5f0e8;--crema-osc:#e8dfc8;
+  --negro:#111;--rojo:#c0000a;--gris:#666;
+  --blanco:#fff;
+}
+html,body{min-height:100%;background:var(--verde);font-family:'Barlow Condensed',sans-serif;color:var(--negro)}
+
+/* HEADER */
+#hdr{background:linear-gradient(180deg,#0a0a0a 0%,#1a1a1a 100%);color:var(--dorado);text-align:center;padding:14px 20px 10px;border-bottom:4px solid var(--dorado)}
+#hdr .ico{font-size:2rem;line-height:1}
+#hdr h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,8vw,3.6rem);letter-spacing:5px;line-height:1;text-shadow:2px 2px 0 #000}
+#hdr .sub{font-size:clamp(0.65rem,2.5vw,0.85rem);letter-spacing:6px;color:#aaa;margin-top:3px}
+#torneo-disp{font-family:'Bebas Neue',sans-serif;font-size:clamp(0.85rem,3vw,1.2rem);color:var(--dorado);letter-spacing:3px;margin-top:6px;display:none}
+
+/* NAV */
+#nav{background:#0d0d0d;display:none;justify-content:center;border-bottom:3px solid var(--dorado)}
+#nav.vis{display:flex}
+.ntab{padding:10px 18px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;color:#888;cursor:pointer;border:none;background:transparent;border-bottom:3px solid transparent;margin-bottom:-3px;transition:color .2s}
+.ntab:hover{color:#ccc}
+.ntab.on{color:var(--dorado);border-bottom-color:var(--dorado)}
+
+/* VIEWS */
+.view{display:none;padding:18px;max-width:920px;margin:0 auto}
+.view.on{display:block;animation:fadeUp .3s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+/* CARDS */
+.card{background:var(--crema);border:3px solid var(--negro);border-radius:3px;padding:20px;margin-bottom:18px;box-shadow:4px 4px 0 var(--negro)}
+.card h2{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:2px;color:var(--verde);border-bottom:2px solid var(--verde);padding-bottom:7px;margin-bottom:14px}
+
+/* FORMS */
+.fg{margin-bottom:14px}
+.fg label{display:block;font-weight:700;font-size:0.8rem;letter-spacing:1px;text-transform:uppercase;margin-bottom:5px}
+.fg input[type=text],.fg input[type=number]{width:100%;padding:9px 11px;font-family:'Courier Prime',monospace;font-size:1rem;border:2px solid var(--negro);background:var(--blanco);border-radius:2px}
+.fg input:focus{outline:none;border-color:var(--verde);box-shadow:0 0 0 2px rgba(26,71,42,.2)}
+
+/* JUGADORES LISTA */
+.jlist{list-style:none;margin-bottom:10px}
+.jitem{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--blanco);border:1px solid #ccc;border-radius:2px;margin-bottom:5px}
+.jnum{font-family:'Courier Prime',monospace;font-weight:700;color:var(--verde);min-width:22px}
+.jnombre{flex:1;font-size:1rem;font-weight:600}
+.btn-x{background:var(--rojo);color:#fff;border:none;width:22px;height:22px;border-radius:50%;font-size:1.1rem;line-height:1;cursor:pointer;font-weight:700;padding:0;display:flex;align-items:center;justify-content:center}
+.add-row{display:flex;gap:8px}
+.add-row input{flex:1;padding:8px 10px;font-family:'Barlow Condensed',sans-serif;font-size:1rem;border:2px solid var(--negro);background:var(--blanco)}
+
+/* TOGGLE */
+.trow{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.tlabel{font-weight:700;font-size:.9rem;letter-spacing:1px;text-transform:uppercase}
+.tsw{position:relative;width:52px;height:28px}
+.tsw input{opacity:0;width:0;height:0}
+.tslider{position:absolute;cursor:pointer;inset:0;background:#ccc;border-radius:28px;transition:.3s;border:2px solid #999}
+.tslider::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:50%;transform:translateY(-50%);background:#fff;border-radius:50%;transition:.3s}
+.tsw input:checked+.tslider{background:var(--verde);border-color:var(--verde)}
+.tsw input:checked+.tslider::before{transform:translate(22px,-50%)}
+.pozo-det{display:none;background:#f0f7ed;border:2px solid var(--verde);border-radius:3px;padding:12px;margin-top:8px}
+.pozo-det.vis{display:block}
+.pozo-total{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--verde);letter-spacing:2px;margin-top:7px}
+
+/* BOTONES */
+.btn{display:inline-block;padding:11px 22px;font-family:'Bebas Neue',sans-serif;font-size:1.15rem;letter-spacing:2px;border:2px solid var(--negro);border-radius:2px;cursor:pointer;transition:all .15s;text-align:center;line-height:1}
+.btn-gold{background:var(--dorado);color:var(--negro);box-shadow:3px 3px 0 var(--negro)}
+.btn-gold:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--negro)}
+.btn-gold:active{transform:translate(1px,1px);box-shadow:2px 2px 0 var(--negro)}
+.btn-verde{background:var(--verde);color:var(--dorado);box-shadow:3px 3px 0 var(--negro)}
+.btn-verde:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--negro)}
+.btn-rojo{background:var(--rojo);color:#fff;box-shadow:3px 3px 0 var(--negro)}
+.btn-sm{padding:6px 14px;font-size:.95rem}
+.btn-full{width:100%}
+.err{color:var(--rojo);font-size:.85rem;font-weight:700;margin-top:6px;display:none}
+
+/* ACCIONES BAR */
+.abar{background:rgba(0,0,0,.3);padding:10px 16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:14px;border-radius:3px}
+.prog-wrap{background:rgba(0,0,0,.25);height:7px;border-radius:4px;margin-bottom:3px;overflow:hidden;min-width:160px}
+.prog-bar{height:100%;background:var(--dorado);border-radius:4px;transition:width .4s ease}
+.prog-txt{font-size:.78rem;color:var(--crema);letter-spacing:1px}
+
+/* TABS JUGADORES */
+#jtabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.jtab{padding:8px 15px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.95rem;letter-spacing:1px;background:#ddd;border:2px solid #999;border-radius:2px;cursor:pointer;position:relative;transition:all .15s}
+.jtab:hover{background:#ccc}
+.jtab.on{background:var(--dorado);border-color:var(--negro);color:var(--negro);box-shadow:2px 2px 0 var(--negro)}
+.jtab.done::after{content:'✓';position:absolute;top:-6px;right:-6px;background:var(--verde);color:#fff;width:17px;height:17px;border-radius:50%;font-size:.65rem;display:flex;align-items:center;justify-content:center;border:2px solid #fff;font-weight:900}
+
+/* BOLETA */
+.boleta{background:var(--crema);border:3px solid var(--negro);box-shadow:5px 5px 0 var(--negro);overflow:hidden;position:relative}
+.boleta::before{content:'';position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.035'/%3E%3C/svg%3E");pointer-events:none;z-index:0}
+.boleta-hdr{background:var(--negro);color:var(--dorado);text-align:center;padding:9px;position:relative;z-index:1}
+.boleta-hdr .btit{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:4px}
+.boleta-hdr .bsub{font-size:.7rem;letter-spacing:3px;color:#888}
+.btable{width:100%;border-collapse:collapse;position:relative;z-index:1}
+.btable th{background:#222;color:var(--dorado);font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:2px;padding:7px 3px;text-align:center;border:1px solid #444}
+.btable th.thl{text-align:right}
+.btable th.thv{text-align:left}
+.btable tbody tr:nth-child(even) td{background:rgba(0,0,0,.035)}
+.btable td{border:1px solid #bbb;padding:0;vertical-align:middle}
+.tdn{font-family:'Courier Prime',monospace;font-weight:700;font-size:.85rem;text-align:center;width:30px;color:#555;background:var(--crema-osc) !important}
+.tdeq{padding:7px 9px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:clamp(.8rem,2.2vw,1rem);letter-spacing:.5px}
+.tdl{text-align:right}
+.tdv{text-align:left}
+.tdop{width:42px;text-align:center;cursor:pointer;user-select:none;position:relative;height:46px;transition:background .1s}
+.tdop .olbl{font-family:'Bebas Neue',sans-serif;font-size:.6rem;letter-spacing:1px;color:#aaa;position:absolute;top:3px;left:50%;transform:translateX(-50%);line-height:1}
+.tdop .omarca{font-family:'Courier Prime',monospace;font-size:1.9rem;font-weight:700;color:var(--rojo);line-height:1;display:none;padding:6px 0}
+.tdop.mk .omarca{display:block}
+.tdop.mk{background:rgba(192,0,10,.07)}
+.tdop.mk .olbl{color:#ccc;font-size:.5rem}
+.tdop:hover{background:rgba(244,196,48,.22)}
+.tdop.mk:hover{background:rgba(192,0,10,.13)}
+/* Resultados en boleta */
+.tdop.rmk .omarca{display:block;color:var(--verde)}
+.tdop.rmk{background:rgba(26,71,42,.1)}
+.tdop.rmk .olbl{color:#ccc;font-size:.5rem}
+/* Verificacion */
+.tdop.vok.mk{background:rgba(26,71,42,.12)}
+.tdop.vok.mk .omarca{color:var(--verde)}
+.tdop.vfail.mk{background:rgba(192,0,10,.12)}
+/* Boleta footer */
+.bfoot{padding:10px 12px;background:var(--crema-osc);border-top:2px solid #bbb;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;position:relative;z-index:1}
+.best{font-size:.84rem;color:#555;font-style:italic}
+.bdone{display:inline-block;background:var(--verde);color:#fff;padding:2px 10px;border-radius:2px;font-style:normal;font-weight:700;letter-spacing:1px;font-size:.78rem}
+
+/* RESULTADOS */
+.rinfo{background:var(--crema);border:2px solid var(--verde);padding:10px 14px;margin-bottom:14px;border-radius:2px;font-size:.88rem;color:var(--verde);font-weight:600;letter-spacing:.5px}
+
+/* RANKING */
+.rkhdr{text-align:center;margin-bottom:18px}
+.rkhdr h2{font-family:'Bebas Neue',sans-serif;font-size:2.4rem;color:var(--dorado);letter-spacing:4px;text-shadow:2px 2px 0 var(--negro)}
+.pozo-box{background:var(--dorado);border:3px solid var(--negro);padding:12px 22px;text-align:center;margin-bottom:18px;box-shadow:4px 4px 0 var(--negro)}
+.pozo-box .pmonto{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:3px}
+.pozo-box .plbl{font-size:.75rem;letter-spacing:3px;text-transform:uppercase;font-weight:700;color:#444}
+.rkcard{background:var(--crema);border:2px solid var(--negro);margin-bottom:8px;display:flex;align-items:stretch;box-shadow:2px 2px 0 #999;overflow:hidden;transition:transform .2s}
+.rkcard.gana{border:3px solid var(--dorado);box-shadow:4px 4px 0 var(--negro);background:#fffde8}
+.rkcard .rpos{background:#333;color:var(--dorado);font-family:'Bebas Neue',sans-serif;font-size:1.7rem;min-width:52px;display:flex;align-items:center;justify-content:center;letter-spacing:1px}
+.rkcard.gana .rpos{background:var(--dorado);color:var(--negro);font-size:1.9rem}
+.rkcard .rinfo{flex:1;padding:10px 14px}
+.rkcard .rnombre{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.25rem;letter-spacing:1px}
+.rkcard.gana .rnombre{color:var(--verde)}
+.rkcard .rdet{display:flex;gap:3px;flex-wrap:wrap;margin-top:5px}
+.mr{width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-family:'Courier Prime',monospace;font-size:.68rem;font-weight:700;border:1px solid #ccc;border-radius:2px;background:#eee;color:#999}
+.mr.ok{background:var(--verde);color:#fff;border-color:var(--verde)}
+.mr.fail{background:#fce0e3;color:var(--rojo);border-color:var(--rojo)}
+.mr.sp{background:#eee;color:#ccc;border-color:#ddd}
+.rscore{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 14px;background:rgba(0,0,0,.05);border-left:1px solid #ccc;min-width:64px}
+.rscore .snum{font-family:'Bebas Neue',sans-serif;font-size:1.9rem;line-height:1}
+.rkcard.gana .rscore .snum{color:var(--verde)}
+.rscore .slbl{font-size:.62rem;letter-spacing:1px;text-transform:uppercase;color:#888;text-align:center}
+.gbadge{background:var(--dorado);color:var(--negro);font-family:'Bebas Neue',sans-serif;font-size:.8rem;letter-spacing:2px;padding:1px 8px;border-radius:2px;margin-left:6px}
+.no-res{background:var(--crema);border:2px solid #bbb;padding:20px;text-align:center;font-size:1rem;color:#888;font-style:italic}
+
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:100;align-items:center;justify-content:center}
+.overlay.vis{display:flex}
+.modal{background:var(--crema);border:3px solid var(--negro);padding:26px;max-width:390px;width:90%;box-shadow:6px 6px 0 var(--negro);text-align:center}
+.modal h3{font-family:'Bebas Neue',sans-serif;font-size:1.7rem;letter-spacing:2px;margin-bottom:10px}
+.modal p{font-size:.92rem;color:#555;margin-bottom:18px;line-height:1.5}
+.modal-btns{display:flex;gap:10px;justify-content:center}
+
+/* UTILS */
+.mt8{margin-top:8px}.mt16{margin-top:16px}.mt24{margin-top:24px}.tc{text-align:center}
+.hidden{display:none!important}
+
+/* RESPONSIVE */
+@media(max-width:580px){
+  .view{padding:10px}
+  .tdeq{padding:5px 5px;font-size:.78rem}
+  .tdop{width:34px;height:42px}
+  .tdop .omarca{font-size:1.6rem}
+  .tdn{width:24px;font-size:.72rem}
+  .bfoot{flex-direction:column}
+  .abar{flex-direction:column;align-items:flex-start}
+  .rkcard .rinfo{padding:8px 10px}
+}
+</style>
+</head>
+<body>
+
+<header id="hdr">
+  <div class="ico">⚽</div>
+  <h1>PRODE DE OFICINA</h1>
+  <div class="sub">PRONÓSTICO DEPORTIVO DIGITAL</div>
+  <div id="torneo-disp"></div>
+</header>
+
+<nav id="nav">
+  <button class="ntab" data-v="view-prode">📋 BOLETAS</button>
+  <button class="ntab" data-v="view-res">⚽ RESULTADOS</button>
+  <button class="ntab" data-v="view-rk">🏆 RANKING</button>
+</nav>
+
+<!-- CONFIG -->
+<div id="view-cfg" class="view on">
+  <div class="card">
+    <h2>⚙️ CONFIGURAR TORNEO</h2>
+    <div class="fg">
+      <label>Nombre del torneo</label>
+      <input type="text" id="inp-torneo" placeholder="Ej: Prode Oficina Mundial 2026" maxlength="60">
+    </div>
+  </div>
+  <div class="card">
+    <h2>👥 JUGADORES</h2>
+    <ul class="jlist" id="jlist"></ul>
+    <div class="add-row">
+      <input type="text" id="inp-jugador" placeholder="Nombre del jugador..." maxlength="30">
+      <button class="btn btn-verde btn-sm" id="btn-add">+ AGREGAR</button>
+    </div>
+    <div class="err" id="err-jugadores">⚠️ Agregá al menos un jugador para continuar.</div>
+  </div>
+  <div class="card">
+    <h2>💰 POZO</h2>
+    <div class="trow">
+      <span class="tlabel">Jugar con pozo</span>
+      <label class="tsw"><input type="checkbox" id="tog-pozo"><span class="tslider"></span></label>
+    </div>
+    <div class="pozo-det" id="pozo-det">
+      <div class="fg">
+        <label>Monto por jugador ($ ARS)</label>
+        <input type="number" id="inp-monto" min="0" step="100" placeholder="1000">
+      </div>
+      <div class="pozo-total" id="pozo-total">POZO TOTAL: $ 0</div>
+    </div>
+  </div>
+  <button class="btn btn-gold btn-full mt16" id="btn-iniciar">🏁 INICIAR PRODE</button>
+</div>
+
+<!-- PRODE -->
+<div id="view-prode" class="view">
+  <div class="abar">
+    <div>
+      <div class="prog-wrap"><div class="prog-bar" id="prog-bar" style="width:0%"></div></div>
+      <div class="prog-txt" id="prog-txt">0 de 0 jugadores completaron su boleta</div>
+    </div>
+    <button class="btn btn-rojo btn-sm" id="btn-nueva">↺ NUEVA EDICIÓN</button>
+  </div>
+  <div id="jtabs"></div>
+  <div class="boleta" id="boleta">
+    <div class="boleta-hdr">
+      <div class="btit" id="btit">BOLETA</div>
+      <div class="bsub">PRONÓSTICO DEPORTIVO ARGENTINO</div>
+    </div>
+    <table class="btable">
+      <thead><tr>
+        <th style="width:30px">#</th>
+        <th class="thl">LOCAL</th>
+        <th style="width:42px">L</th>
+        <th style="width:42px">E</th>
+        <th style="width:42px">V</th>
+        <th class="thv">VISITANTE</th>
+      </tr></thead>
+      <tbody id="btbody"></tbody>
+    </table>
+    <div class="bfoot">
+      <div class="best" id="best">Marcá tus 13 pronósticos</div>
+      <button class="btn btn-verde btn-sm" id="btn-guardar">💾 GUARDAR BOLETA</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESULTADOS -->
+<div id="view-res" class="view">
+  <div class="rinfo">Ingresá los resultados reales de los 13 partidos para calcular los ganadores.</div>
+  <div class="boleta">
+    <div class="boleta-hdr">
+      <div class="btit">RESULTADOS REALES</div>
+      <div class="bsub">MARCÁ EL RESULTADO DE CADA PARTIDO</div>
+    </div>
+    <table class="btable">
+      <thead><tr>
+        <th style="width:30px">#</th>
+        <th class="thl">LOCAL</th>
+        <th style="width:42px">L</th>
+        <th style="width:42px">E</th>
+        <th style="width:42px">V</th>
+        <th class="thv">VISITANTE</th>
+      </tr></thead>
+      <tbody id="rtbody"></tbody>
+    </table>
+    <div class="bfoot">
+      <div class="best" id="rest">Cargá los 13 resultados</div>
+      <button class="btn btn-gold btn-sm" id="btn-calc">🏆 CALCULAR GANADORES</button>
+    </div>
+  </div>
+</div>
+
+<!-- RANKING -->
+<div id="view-rk" class="view">
+  <div class="rkhdr"><h2>🏆 TABLA DE POSICIONES</h2></div>
+  <div id="pozo-wrap"></div>
+  <div id="rk-lista"></div>
+  <div class="tc mt24">
+    <button class="btn btn-rojo" id="btn-nueva-rk">↺ NUEVA EDICIÓN</button>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h3>⚠️ NUEVA EDICIÓN</h3>
+    <p>¿Estás seguro? Se borrarán todos los datos: configuración, jugadores, pronósticos y resultados.</p>
+    <div class="modal-btns">
+      <button class="btn btn-rojo" id="btn-ok-nueva">SÍ, BORRAR TODO</button>
+      <button class="btn btn-verde" id="btn-cancel">CANCELAR</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+const PARTIDOS=[
+  {l:'BRASIL',v:'MARRUECOS'},
+  {l:'AUSTRALIA',v:'TURQUÍA'},
+  {l:'ALEMANIA',v:'CURAZAO'},
+  {l:'PAÍSES BAJOS',v:'JAPÓN'},
+  {l:'COSTA DE MARFIL',v:'ECUADOR'},
+  {l:'SUECIA',v:'TÚNEZ'},
+  {l:'ESPAÑA',v:'CABO VERDE'},
+  {l:'BÉLGICA',v:'EGIPTO'},
+  {l:'ARABIA SAUDITA',v:'URUGUAY'},
+  {l:'IRÁN',v:'NUEVA ZELANDA'},
+  {l:'FRANCIA',v:'SENEGAL'},
+  {l:'IRAK',v:'NORUEGA'},
+  {l:'ARGENTINA',v:'ARGELIA'},
+];
+const OPS=['L','E','V'];
+const LS='prode_oficina_v2';
+
+/* ---- ESTADO ---- */
+function initEst(){return{iniciado:false,torneo:'',jugadores:[],pozo:{on:false,monto:0},prono:{},res:{},rkCalc:false}}
+let S=load();
+let activo=null;
+let confFired=false;
+
+function load(){try{const r=localStorage.getItem(LS);if(r)return JSON.parse(r);}catch(e){}return initEst()}
+function save(){try{localStorage.setItem(LS,JSON.stringify(S));}catch(e){}}
+function uid(){return Math.random().toString(36).slice(2,9)+Date.now().toString(36)}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+/* ---- VISTAS ---- */
+function showView(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  document.querySelectorAll('.ntab').forEach(t=>t.classList.toggle('on',t.dataset.v===id));
+  if(id==='view-prode')renderBoleta();
+  if(id==='view-res')renderRes();
+  if(id==='view-rk')renderRk();
+}
+
+/* ---- CONFIG ---- */
+function renderCfg(){
+  document.getElementById('inp-torneo').value=S.torneo;
+  renderJList();
+  document.getElementById('tog-pozo').checked=S.pozo.on;
+  document.getElementById('inp-monto').value=S.pozo.monto||'';
+  updPozo();
+}
+
+function renderJList(){
+  const ul=document.getElementById('jlist');
+  ul.innerHTML='';
+  S.jugadores.forEach((j,i)=>{
+    const li=document.createElement('li');
+    li.className='jitem';
+    li.innerHTML=`<span class="jnum">${i+1}.</span><span class="jnombre">${esc(j.nombre)}</span><button class="btn-x" data-id="${j.id}" title="Quitar">×</button>`;
+    ul.appendChild(li);
+  });
+  ul.querySelectorAll('.btn-x').forEach(b=>b.addEventListener('click',()=>{
+    S.jugadores=S.jugadores.filter(j=>j.id!==b.dataset.id);
+    delete S.prono[b.dataset.id];
+    save();renderJList();updPozo();
+  }));
+}
+
+function addJugador(){
+  const inp=document.getElementById('inp-jugador');
+  const n=inp.value.trim();
+  if(!n)return;
+  if(S.jugadores.some(j=>j.nombre.toLowerCase()===n.toLowerCase())){alert('Ya existe un jugador con ese nombre.');return}
+  S.jugadores.push({id:uid(),nombre:n});
+  save();inp.value='';renderJList();updPozo();
+  document.getElementById('err-jugadores').style.display='none';
+}
+
+function updPozo(){
+  const on=document.getElementById('tog-pozo').checked;
+  document.getElementById('pozo-det').classList.toggle('vis',on);
+  const m=parseInt(document.getElementById('inp-monto').value)||0;
+  const n=S.jugadores.length;
+  document.getElementById('pozo-total').textContent=
+    `POZO TOTAL: $ ${(m*n).toLocaleString('es-AR')} (${n} jugadores × $${m.toLocaleString('es-AR')})`;
+}
+
+function iniciar(){
+  if(S.jugadores.length===0){document.getElementById('err-jugadores').style.display='block';return}
+  S.torneo=(document.getElementById('inp-torneo').value.trim()||'PRODE DE OFICINA');
+  S.pozo.on=document.getElementById('tog-pozo').checked;
+  S.pozo.monto=parseInt(document.getElementById('inp-monto').value)||0;
+  S.iniciado=true;save();
+  document.getElementById('torneo-disp').textContent=S.torneo;
+  document.getElementById('torneo-disp').style.display='block';
+  document.getElementById('nav').classList.add('vis');
+  activo=S.jugadores[0]?.id||null;
+  showView('view-prode');
+}
+
+/* ---- BOLETA ---- */
+function esCompleto(id){const p=S.prono[id];return p&&Object.keys(p).length===PARTIDOS.length}
+
+function renderBoleta(){
+  if(!activo&&S.jugadores.length>0)activo=S.jugadores[0].id;
+
+  // Tabs
+  const tabs=document.getElementById('jtabs');
+  tabs.innerHTML='';
+  S.jugadores.forEach(j=>{
+    const b=document.createElement('button');
+    b.className='jtab'+(j.id===activo?' on':'')+(esCompleto(j.id)?' done':'');
+    b.textContent=j.nombre;
+    b.addEventListener('click',()=>{activo=j.id;renderBoleta()});
+    tabs.appendChild(b);
+  });
+
+  // Progreso
+  const comp=S.jugadores.filter(j=>esCompleto(j.id)).length;
+  const tot=S.jugadores.length;
+  document.getElementById('prog-bar').style.width=(tot>0?comp/tot*100:0)+'%';
+  document.getElementById('prog-txt').textContent=`${comp} de ${tot} jugadores completaron su boleta`;
+
+  // Título
+  const jug=S.jugadores.find(j=>j.id===activo);
+  document.getElementById('btit').textContent=jug?`BOLETA DE ${jug.nombre.toUpperCase()}`:'BOLETA';
+
+  // Tabla
+  const tbody=document.getElementById('btbody');
+  tbody.innerHTML='';
+  const pr=S.prono[activo]||{};
+
+  PARTIDOS.forEach((p,i)=>{
+    const sel=pr[i];
+    const rr=S.res[i];
+    const tr=document.createElement('tr');
+    const celdas=OPS.map(op=>{
+      const mk=sel===op;
+      let extra='';
+      if(mk&&rr){extra=rr===op?' vok':' vfail'}
+      return `<td class="tdop${mk?' mk':''}${extra}" data-i="${i}" data-op="${op}">
+        <span class="olbl">${op}</span><span class="omarca">✕</span></td>`;
+    }).join('');
+    tr.innerHTML=`<td class="tdn">${i+1}</td><td class="tdeq tdl">${esc(p.l)}</td>${celdas}<td class="tdeq tdv">${esc(p.v)}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll('.tdop').forEach(td=>{
+    td.addEventListener('click',()=>{
+      const i=parseInt(td.dataset.i),op=td.dataset.op;
+      if(!S.prono[activo])S.prono[activo]={};
+      if(S.prono[activo][i]===op)delete S.prono[activo][i];
+      else S.prono[activo][i]=op;
+      save();renderBoleta();
+    });
+  });
+
+  // Estado pie
+  const cnt=Object.keys(pr).length;
+  const bestEl=document.getElementById('best');
+  if(cnt===PARTIDOS.length)bestEl.innerHTML='<span class="bdone">✓ BOLETA COMPLETA</span>';
+  else bestEl.textContent=`${cnt} de ${PARTIDOS.length} partidos marcados`;
+}
+
+function guardarBoleta(){
+  if(!esCompleto(activo)){
+    const cnt=Object.keys(S.prono[activo]||{}).length;
+    alert(`Faltan ${PARTIDOS.length-cnt} partidos por marcar.`);return;
+  }
+  const sig=S.jugadores.find(j=>j.id!==activo&&!esCompleto(j.id));
+  if(sig)activo=sig.id;
+  renderBoleta();
+  const btn=document.getElementById('btn-guardar');
+  const orig=btn.textContent;
+  btn.textContent='✓ GUARDADO!';btn.style.background='#1a6e38';
+  setTimeout(()=>{btn.textContent=orig;btn.style.background='';},1600);
+}
+
+/* ---- RESULTADOS ---- */
+function renderRes(){
+  const tbody=document.getElementById('rtbody');
+  tbody.innerHTML='';
+  PARTIDOS.forEach((p,i)=>{
+    const sel=S.res[i];
+    const tr=document.createElement('tr');
+    const celdas=OPS.map(op=>{
+      const mk=sel===op;
+      return `<td class="tdop${mk?' rmk mk':''}" data-i="${i}" data-op="${op}">
+        <span class="olbl">${op}</span><span class="omarca">✕</span></td>`;
+    }).join('');
+    tr.innerHTML=`<td class="tdn">${i+1}</td><td class="tdeq tdl">${esc(p.l)}</td>${celdas}<td class="tdeq tdv">${esc(p.v)}</td>`;
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll('.tdop').forEach(td=>{
+    td.addEventListener('click',()=>{
+      const i=parseInt(td.dataset.i),op=td.dataset.op;
+      if(S.res[i]===op)delete S.res[i];else S.res[i]=op;
+      save();renderRes();
+    });
+  });
+  const c=Object.keys(S.res).length;
+  const re=document.getElementById('rest');
+  if(c===PARTIDOS.length)re.innerHTML='<span class="bdone">✓ TODOS LOS RESULTADOS CARGADOS</span>';
+  else re.textContent=`${c} de ${PARTIDOS.length} resultados cargados`;
+}
+
+function calcular(){
+  if(Object.keys(S.res).length<PARTIDOS.length){alert('Faltan resultados por cargar. Completá los 13 partidos.');return}
+  S.rkCalc=true;confFired=false;save();showView('view-rk');
+}
+
+/* ---- RANKING ---- */
+function aciertos(id){
+  const p=S.prono[id]||{};
+  return PARTIDOS.reduce((acc,_,i)=>acc+(p[i]&&p[i]===S.res[i]?1:0),0);
+}
+
+function renderRk(){
+  const lista=document.getElementById('rk-lista');
+  lista.innerHTML='';
+
+  const resOk=Object.keys(S.res).length===PARTIDOS.length;
+  if(!resOk){
+    lista.innerHTML='<div class="no-res">Cargá los 13 resultados en la pestaña RESULTADOS para ver el ranking final.</div>';
+    document.getElementById('pozo-wrap').innerHTML='';return;
+  }
+
+  const pts=S.jugadores.map(j=>({...j,ac:aciertos(j.id),pr:S.prono[j.id]||{}}));
+  pts.sort((a,b)=>b.ac-a.ac);
+  const max=pts[0]?.ac??0;
+  const gana=pts.filter(p=>p.ac===max);
+
+  // Pozo
+  const pw=document.getElementById('pozo-wrap');
+  pw.innerHTML='';
+  if(S.pozo.on&&S.pozo.monto>0){
+    const tot=S.pozo.monto*S.jugadores.length;
+    const xg=Math.floor(tot/gana.length);
+    pw.innerHTML=`<div class="pozo-box">
+      <div class="plbl">💰 POZO TOTAL</div>
+      <div class="pmonto">$ ${tot.toLocaleString('es-AR')}</div>
+      ${gana.length>1
+        ?`<div style="font-size:.85rem;margin-top:5px;font-weight:700;color:#555">${gana.length} ganadores comparten: <strong>$ ${xg.toLocaleString('es-AR')}</strong> cada uno</div>`
+        :`<div style="font-size:.85rem;margin-top:5px;font-weight:700;color:var(--verde)">🏆 ${esc(gana[0].nombre)} se lleva todo el pozo!</div>`
+      }</div>`;
+  }
+
+  pts.forEach((p,pos)=>{
+    const esG=p.ac===max;
+    const card=document.createElement('div');
+    card.className='rkcard'+(esG?' gana':'');
+    const det=PARTIDOS.map((_,i)=>{
+      const pn=p.pr[i],rr=S.res[i];
+      if(!pn)return`<div class="mr sp" title="P${i+1}: sin pronóstico">–</div>`;
+      const ok=rr&&pn===rr;
+      return`<div class="mr${ok?' ok':rr?' fail':''}" title="P${i+1}: ${pn}${rr?' (res:'+rr+')':''}">
+        ${pn}</div>`;
+    }).join('');
+    card.innerHTML=`
+      <div class="rpos">${pos+1}</div>
+      <div class="rinfo">
+        <div class="rnombre">${esc(p.nombre)}${esG?'<span class="gbadge">🏆 CAMPEÓN</span>':''}</div>
+        <div class="rdet">${det}</div>
+      </div>
+      <div class="rscore">
+        <div class="snum">${p.ac}</div>
+        <div class="slbl">aciertos<br>de ${PARTIDOS.length}</div>
+      </div>`;
+    lista.appendChild(card);
+  });
+
+  if(S.rkCalc&&max>0&&!confFired){confFired=true;setTimeout(celebrar,350)}
+}
+
+function celebrar(){
+  if(typeof confetti==='undefined')return;
+  const end=Date.now()+2800;
+  const cols=['#f4c430','#1a472a','#ffffff','#c0000a'];
+  (function f(){
+    confetti({particleCount:3,angle:60,spread:55,origin:{x:0},colors:cols});
+    confetti({particleCount:3,angle:120,spread:55,origin:{x:1},colors:cols});
+    if(Date.now()<end)requestAnimationFrame(f);
+  })();
+}
+
+/* ---- NUEVA EDICIÓN ---- */
+function showModal(){document.getElementById('overlay').classList.add('vis')}
+function hideModal(){document.getElementById('overlay').classList.remove('vis')}
+function nuevaEd(){
+  S=initEst();activo=null;confFired=false;save();
+  document.getElementById('nav').classList.remove('vis');
+  document.getElementById('torneo-disp').style.display='none';
+  hideModal();renderCfg();showView('view-cfg');
+}
+
+/* ---- EVENTOS ---- */
+document.getElementById('btn-add').addEventListener('click',addJugador);
+document.getElementById('inp-jugador').addEventListener('keydown',e=>{if(e.key==='Enter')addJugador()});
+document.getElementById('tog-pozo').addEventListener('change',updPozo);
+document.getElementById('inp-monto').addEventListener('input',updPozo);
+document.getElementById('btn-iniciar').addEventListener('click',iniciar);
+document.getElementById('btn-guardar').addEventListener('click',guardarBoleta);
+document.getElementById('btn-calc').addEventListener('click',calcular);
+document.getElementById('btn-nueva').addEventListener('click',showModal);
+document.getElementById('btn-nueva-rk').addEventListener('click',showModal);
+document.getElementById('btn-ok-nueva').addEventListener('click',nuevaEd);
+document.getElementById('btn-cancel').addEventListener('click',hideModal);
+document.getElementById('overlay').addEventListener('click',e=>{if(e.target===e.currentTarget)hideModal()});
+document.querySelectorAll('.ntab').forEach(t=>t.addEventListener('click',()=>showView(t.dataset.v)));
+
+/* ---- INIT ---- */
+(function(){
+  if(S.iniciado){
+    document.getElementById('torneo-disp').textContent=S.torneo;
+    document.getElementById('torneo-disp').style.display='block';
+    document.getElementById('nav').classList.add('vis');
+    activo=S.jugadores[0]?.id||null;
+    if(S.rkCalc&&Object.keys(S.res).length===PARTIDOS.length)showView('view-rk');
+    else showView('view-prode');
+  }else{
+    renderCfg();showView('view-cfg');
+  }
+})();
+</script>
+</body>
+</html>
